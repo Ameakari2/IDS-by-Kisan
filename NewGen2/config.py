@@ -1,19 +1,28 @@
+# --- Path Settings ---
 DATA_PATH = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15.csv"
 FEATURE_PATH = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_features.csv"
-
+MODEL_SAVE_PATH = "D:/ProgramTest/SystemMaster/NewGen2"
 TRAIN_PATH = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_training-set.csv"
 TEST_PATH = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_testing-set.csv"
 
-TEST_SIZE_BINARY = 0.2
-TEST_SIZE_MULTI = 0.3
-RANDOM_STATE = 42
+# --- Mode Setting ---
+MODE = "binary" # binary 和 multi 两种模式（小写）
 
-CORRELATION_THRESHOLD = 0.1 # 从0.3改为0.1
-MODE = "binary" # binary 和 multi 两种模式
-
+# --- CNN Settings ---
 LEARNING_RATE=0.001 # 合适的学习率
 CNN_EPOCHS = 20
 BATCH_SIZE = 64
 
-# MODEL_SAVE_PATH = "./models/"
-MODEL_SAVE_PATH = "D:/ProgramTest/SystemMaster/NewGen2"
+# --- Feature Selection ---
+CORRELATION_THRESHOLD = 0.1 # 从0.3改为0.1
+
+# --- Original Training Files ---
+TEST_SIZE_BINARY = 0.2
+TEST_SIZE_MULTI = 0.3
+RANDOM_STATE = 42
+
+# --- FL Settings ---
+USE_FEDERATED = False    # 是否启用联邦学习
+FL_NUM_CLIENTS = 5       # 模拟的客户端数量
+FL_ROUNDS = 20           # 服务器聚合的全局轮次 (Communication Rounds)
+FL_LOCAL_EPOCHS = 3      # 每个客户端在本地更新的 Epoch 数

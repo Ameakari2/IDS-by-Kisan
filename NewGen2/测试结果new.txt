@@ -1,0 +1,158 @@
+【简单CNN】
+Test Loss: 0.172106
+Accuracy: 0.925969
+Precision (weighted): 0.931068
+Recall (weighted): 0.925969
+F1-score (weighted): 0.925666
+
+Classification Report:
+     precision    recall  f1-score   support
+
+           0       0.98      0.87      0.92      9264
+           1       0.89      0.98      0.93      9620
+
+        accuracy                                0.93     18884
+     macro avg       0.93      0.92      0.93     18884
+weighted avg       0.93      0.93      0.93     18884
+
+
+Confusion Matrix:
+[[8045  1219 ]
+ [ 179    9441 ]]
+
+
+【3-19v1】联邦学习
+Test Loss: 0.162334
+Accuracy: 0.915749
+Precision (weighted): 0.926545
+Recall (weighted): 0.915749
+F1-score (weighted): 0.915072
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.83      0.91      9264
+           1       0.86      1.00      0.92      9620
+
+        accuracy                                 0.92     18884
+     macro avg       0.93      0.91      0.91     18884
+weighted avg       0.93      0.92      0.92     18884
+
+Confusion Matrix:
+[[7711  1553 ]
+ [  38     9582 ]]
+
+
+【4-2v1】Dual-Branch CNN，train_test_split的test_size=0.5
+===Part 1===
+Test Loss: 0.161815
+Accuracy: 0.921097
+Precision (weighted): 0.926430
+Recall (weighted): 0.921097
+F1-score (weighted): 0.920758
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.97      0.86      0.91      9264
+           1       0.88      0.98      0.93      9620
+
+        accuracy                                 0.92     18884
+     macro avg       0.93      0.92      0.92     18884
+weighted avg       0.93      0.92      0.92     18884
+
+
+Confusion Matrix:
+[[7984   1280 ]
+ [ 210    9410 ]]
+
+===Part 2===
+Test Loss: 0.198669
+Accuracy: 0.906005
+Precision (weighted): 0.918044
+Recall (weighted): 0.906005
+F1-score (weighted): 0.905155
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.82      0.90      9264
+           1       0.85      0.99      0.91      9620
+
+        accuracy                                 0.91     18884
+     macro avg       0.92      0.90      0.90     18884
+weighted avg       0.92      0.91      0.91     18884
+
+
+Confusion Matrix:
+[[7568   1696 ]
+ [  79     9541 ]]
+
+
+【4-2v2，4-7experiment】调参实验，train_test_split的test_size=0.8（是否调为）
+===Part 1===
+Test Loss: 0.227911
+Accuracy: 0.897320
+Precision (weighted): 0.913874
+Recall (weighted): 0.897320
+F1-score (weighted): 0.896065
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.79      0.88      9264
+           1       0.83      1.00      0.91      9620
+
+    accuracy                                   0.90     18884
+   macro avg       0.92      0.90      0.90     18884
+weighted avg       0.91      0.90      0.90     18884
+
+Confusion Matrix:
+[[ 7343   1921]
+ [   18     9602 ]]
+
+===Part 2===
+Test Loss: 0.194255
+Accuracy: 0.908759
+Precision (weighted): 0.919086
+Recall (weighted): 0.908759
+F1-score (weighted): 0.908042
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.83      0.90      9264
+           1       0.86      0.99      0.92      9620
+
+    accuracy                                  0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+Confusion Matrix:
+[[ 7654   1610]
+ [  113    9507]]
+
+
+【简单CNN】
+Test Loss: 0.191826
+Accuracy: 0.916755
+Precision (weighted): 0.923850
+Recall (weighted): 0.916755
+F1-score (weighted): 0.916292
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.85      0.91      9264
+           1       0.87      0.98      0.92      9620
+
+    accuracy                                  0.92     18884
+   macro avg       0.92      0.92      0.92     18884
+weighted avg       0.92      0.92      0.92     18884
+
+Confusion Matrix:
+[[ 7860   1404]
+ [  168    9452]]
+
+
+

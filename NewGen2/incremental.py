@@ -1,6 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import random
+"""
+原理：
+EWC 核心类（最重要部分）：
+实现保存旧权重、计算费雪矩阵、计算正则损失三个核心功能
+"""
 
 # version 1, 存储旧任务样本, Replay 中大多数是 Normal 
 """
@@ -53,6 +59,7 @@ class EWC:
         self.fisher = self.compute_fisher(dataloader)
 
     def compute_fisher(self, dataloader):
+        # 计算费雪矩阵：用旧任务数据，梯度平方的平均值
         fisher = {n: torch.zeros_like(p)
                   for n, p in self.model.named_parameters() if p.requires_grad}
         # 保存当前模型参数 然后计算 Fisher Information
@@ -79,4 +86,24 @@ class EWC:
             if n in self.fisher:
                 loss += (self.fisher[n] * (p - self.params[n]).pow(2)).sum()
         return loss
-    
+
+"""
+注：你原来的 EWC 类写得很好，
+由于在获取需要求梯度的参数时使用了 if p.requires_grad 
+这完美契合了我们后续要冻结静态分支的设计，所以 EWC 部分无需改动。
+"""
+def lwf_distillation_loss(y_pred, y_old_pred, T=2.0):
+    """
+    LwF 知识蒸馏损失 (响应蒸馏)
+    通过软标签让新模型记住旧模型的输出分布
+    y_pred: 新模型的输出 logits
+    y_old_pred: 旧模型的输出 logits (需保持无梯度状态)
+    T: 温度系数 (Temperature)，通常设置为 2.0 左右
+    """
+    # 新模型的输出使用 log_softmax
+    p_s = F.log_softmax(y_pred / T, dim=1)
+    # 旧模型的输出作为目标，使用 softmax
+    p_t = F.softmax(y_old_pred / T, dim=1)   
+    # 计算 KL 散度
+    loss = F.kl_div(p_s, p_t, reduction='batchmean') * (T ** 2)
+    return loss

@@ -5,7 +5,6 @@ class DriftDetector:
     def __init__(self):
         self.adwin = ADWIN()
     def update(self, error):
-
         """
         输入当前预测是否错误
         0 = 正确
