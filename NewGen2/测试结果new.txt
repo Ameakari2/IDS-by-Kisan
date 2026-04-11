@@ -1,0 +1,384 @@
+【3-19v1】纯普通CNN
+Test Loss: 0.190392
+Accuracy: 0.898009
+Precision (weighted): 0.914209
+Recall (weighted): 0.898009
+F1-score (weighted): 0.896787
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.79      0.88      9264
+           1       0.83      1.00      0.91      9620
+
+    accuracy                           0.90     18884
+   macro avg       0.92      0.90      0.90     18884
+weighted avg       0.91      0.90      0.90     18884
+
+Confusion Matrix:
+[[ 7360  1904 ]
+ [    22   9598 ]]
+
+【3-19v1】简单CNN+类别平衡回放+简单联邦FedAvg
+Test Loss: 0.162334
+Accuracy: 0.915749
+Precision (weighted): 0.926545
+Recall (weighted): 0.915749
+F1-score (weighted): 0.915072
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.83      0.91      9264
+           1       0.86      1.00      0.92      9620
+
+        accuracy                                 0.92     18884
+     macro avg       0.93      0.91      0.91     18884
+weighted avg       0.93      0.92      0.92     18884
+
+Confusion Matrix:
+[[7711  1553 ]
+ [  38     9582 ]]
+
+
+【简单CNN】增量学习：类别平衡回放
+Test Loss: 0.191826
+Accuracy: 0.916755
+Precision (weighted): 0.923850
+Recall (weighted): 0.916755
+F1-score (weighted): 0.916292
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.85      0.91      9264
+           1       0.87      0.98      0.92      9620
+
+    accuracy                                  0.92     18884
+   macro avg       0.92      0.92      0.92     18884
+weighted avg       0.92      0.92      0.92     18884
+
+Confusion Matrix:
+[[ 7860   1404]
+ [  168    9452]]
+
+【4-2v1】Dual-Branch CNN，train_test_split的test_size=0.5——效果一般
+===Part 1===
+Test Loss: 0.161815
+Accuracy: 0.921097
+Precision (weighted): 0.926430
+Recall (weighted): 0.921097
+F1-score (weighted): 0.920758
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.97      0.86      0.91      9264
+           1       0.88      0.98      0.93      9620
+
+        accuracy                                 0.92     18884
+     macro avg       0.93      0.92      0.92     18884
+weighted avg       0.93      0.92      0.92     18884
+
+
+Confusion Matrix:
+[[7984   1280 ]
+ [ 210    9410 ]]
+
+===Part 2===
+Test Loss: 0.198669
+Accuracy: 0.906005
+Precision (weighted): 0.918044
+Recall (weighted): 0.906005
+F1-score (weighted): 0.905155
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.82      0.90      9264
+           1       0.85      0.99      0.91      9620
+
+        accuracy                                 0.91     18884
+     macro avg       0.92      0.90      0.90     18884
+weighted avg       0.92      0.91      0.91     18884
+
+
+Confusion Matrix:
+[[7568   1696 ]
+ [  79     9541 ]]
+
+
+【4-2v2，4-7】调参实验，train_test_split的test_size=0.8
+EWC 的系数0.4， LwF 的系数0.5
+===Part 1===
+Test Loss: 0.227911
+Accuracy: 0.897320
+Precision (weighted): 0.913874
+Recall (weighted): 0.897320
+F1-score (weighted): 0.896065
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.79      0.88      9264
+           1       0.83      1.00      0.91      9620
+
+    accuracy                                   0.90     18884
+   macro avg       0.92      0.90      0.90     18884
+weighted avg       0.91      0.90      0.90     18884
+
+Confusion Matrix:
+[[ 7343   1921]
+ [   18     9602 ]]
+
+===Part 2===
+Test Loss: 0.194255
+Accuracy: 0.908759
+Precision (weighted): 0.919086
+Recall (weighted): 0.908759
+F1-score (weighted): 0.908042
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.83      0.90      9264
+           1       0.86      0.99      0.92      9620
+
+    accuracy                                  0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+Confusion Matrix:
+[[ 7654   1610]
+ [  113    9507]]
+
+
+【4-2v2，4-7】取消双约束的version
+Test Loss: 0.143049
+Accuracy: 0.925440
+Precision (weighted): 0.931027
+Recall (weighted): 0.925440
+F1-score (weighted): 0.925109
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.87      0.92      9264
+           1       0.88      0.98      0.93      9620
+
+    accuracy                                  0.93     18884
+   macro avg       0.93      0.92      0.93     18884
+weighted avg       0.93      0.93      0.93     18884
+
+Confusion Matrix:
+[[ 8016  1248 ]
+ [  160   9460 ]]
+
+Test Loss: 0.218248
+Accuracy: 0.895202
+Precision (weighted): 0.910755
+Recall (weighted): 0.895202
+F1-score (weighted): 0.893983
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.79      0.88      9264
+           1       0.83      0.99      0.91      9620
+
+    accuracy                                  0.90     18884
+   macro avg       0.91      0.89      0.89     18884
+weighted avg       0.91      0.90      0.89     18884
+
+Confusion Matrix:
+[[ 7348 1916 ]
+ [   63   9557 ]]
+
+【4-2v3，4-8】CBAM改ECA
+Test Loss: 0.301042
+Accuracy: 0.871531
+Precision (weighted): 0.895987
+Recall (weighted): 0.871531
+F1-score (weighted): 0.869166
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      0.74      0.85      9264
+           1       0.80      1.00      0.89      9620
+
+    accuracy                                  0.87     18884
+   macro avg       0.90      0.87      0.87     18884
+weighted avg       0.90      0.87      0.87     18884
+
+Confusion Matrix:
+[[ 6869  2395 ]
+ [  31     9589 ]]
+
+Test Loss: 0.199404
+Accuracy: 0.911989
+Precision (weighted): 0.920602
+Recall (weighted): 0.911989
+F1-score (weighted): 0.911404
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.84      0.90      9264
+           1       0.86      0.98      0.92      9620
+
+          accuracy                           0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+Confusion Matrix:
+[[ 7750  1514 ]
+ [ 148    9472 ]]
+
+【4-8v1】GAF & 2D CNN，增量学习（未使用EWC和LwF约束）——效果不好
+Test Loss: 0.217991
+Accuracy: 0.904840
+Precision (weighted): 0.918151
+Recall (weighted): 0.904840
+F1-score (weighted): 0.903897
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.81      0.89      9264
+           1       0.85      0.99      0.91      9620
+
+    accuracy                                0.90     18884
+   macro avg       0.92      0.90      0.90     18884
+weighted avg       0.92      0.90      0.90     18884
+
+Confusion Matrix:
+[[ 7516  1748 ]
+ [   49   9571 ]]
+===Part 2===
+Test Loss: 0.201572
+Accuracy: 0.896950
+Precision (weighted): 0.910243
+Recall (weighted): 0.896950
+F1-score (weighted): 0.895910
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.80      0.88      9264
+           1       0.84      0.99      0.91      9620
+
+    accuracy                                0.90     18884
+   macro avg       0.91      0.90      0.90     18884
+weighted avg       0.91      0.90      0.90     18884
+
+Confusion Matrix:
+[[ 7433   1831 ]
+ [ 115    9505 ]]
+
+【4-2v3，4-11】双分支双约束，CBAM，0.1和0.05，增量学习——效果不好
+Test Loss: 0.164568
+Accuracy: 0.908123
+Precision (weighted): 0.919253
+Recall (weighted): 0.908123
+F1-score (weighted): 0.907352
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.82      0.90      9264
+           1       0.85      0.99      0.92      9620
+
+    accuracy                           0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+Confusion Matrix:
+[[ 7620   1644 ]
+ [  91   9529 ]]
+
+Test Loss: 0.186047
+Accuracy: 0.907541
+Precision (weighted): 0.920059
+Recall (weighted): 0.907541
+F1-score (weighted): 0.906679
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.82      0.90      9264
+           1       0.85      0.99      0.92      9620
+
+    accuracy                           0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+Confusion Matrix:
+[[ 7569 1695 ]
+ [  51   9569 ]]
+
+【4-11】纯双分支CNN+CBAM，无增量
+=== Evaluation Results binary ===
+Test Loss: 0.184682
+Accuracy: 0.911777
+Precision (weighted): 0.919769
+Recall (weighted): 0.911777
+F1-score (weighted): 0.911227
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.84      0.90      9264
+           1       0.86      0.98      0.92      9620
+
+    accuracy                           0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+
+Confusion Matrix:
+[[ 7772   1492 ]
+ [ 174   9446 ]]
+
+【4-11】GAF & 2D CNN，双约束EWC和LwF，参数0.05和0.1
+Test Loss: 0.202105
+Accuracy: 0.908653
+Precision (weighted): 0.918161
+Recall (weighted): 0.908653
+F1-score (weighted): 0.907985
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.83      0.90      9264
+           1       0.86      0.99      0.92      9620
+
+    accuracy                               0.91     18884
+   macro avg       0.92      0.91      0.91     18884
+weighted avg       0.92      0.91      0.91     18884
+
+
+Confusion Matrix:
+[[ 7682  1582 ]
+ [ 143   9477 ]]
+======Part 2======
+Test Loss: 0.231705
+Accuracy: 0.889801
+Precision (weighted): 0.907675
+Recall (weighted): 0.889801
+F1-score (weighted): 0.888331
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.78      0.87      9264
+           1       0.82      1.00      0.90      9620
+
+    accuracy                               0.89     18884
+   macro avg       0.91      0.89      0.89     18884
+weighted avg       0.91      0.89      0.89     18884
+
+Confusion Matrix:
+[[ 7227   2037 ]
+ [  44   9576 ]]
+

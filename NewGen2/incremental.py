@@ -94,6 +94,7 @@ class EWC:
 """
 def lwf_distillation_loss(y_pred, y_old_pred, T=2.0):
     """
+    Learning without Forgetting + distillation
     LwF 知识蒸馏损失 (响应蒸馏)
     通过软标签让新模型记住旧模型的输出分布
     y_pred: 新模型的输出 logits

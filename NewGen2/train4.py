@@ -1,10 +1,9 @@
 """
 版本说明：
-4.2v3 的 code 更改了新的模型构建，从 train2 升级为 train3 
-从CNN+EWC变为了双分支CNN+EWC+LwF+CBAM（现改为 ECA）
-未使用联邦
+从 Dual Branch CNN 到 格拉姆角场 (GAF) + 轻量级 2D-CNN
+增量学习：类别平衡回放、弹性权重巩固 EWC、LwF知识蒸馏损失
 """
-import os
+
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     classification_report, confusion_matrix
@@ -17,6 +16,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
+from pyts.image import GramianAngularField
 
 import config
 from incremental import BalancedReplayBuffer, EWC, lwf_distillation_loss
@@ -128,52 +128,24 @@ class SpatialAttention1D(nn.Module):
         x = torch.cat([avg_out, max_out], dim=1)
         x = self.conv1(x)
         return self.sigmoid(x)
-
-class CBAM1D(nn.Module):
-    def __init__(self, in_planes, ratio=16, kernel_size=7):
-        super(CBAM1D, self).__init__()
-        self.ca = ChannelAttention1D(in_planes, ratio)
-        self.sa = SpatialAttention1D(kernel_size)
-
-    def forward(self, x):
-        out = x * self.ca(x)
-        result = out * self.sa(out)
-        return result
-
+    
 class ECA1D(nn.Module):
     def __init__(self, channels, gamma=2, b=1):
         super(ECA1D, self).__init__()
-        # 1. 根据通道数自适应计算卷积核大小 (必须是奇数)
         t = int(abs((math.log(channels, 2) + b) / gamma))
         k = t if t % 2 else t + 1
-        # 2. 全局平均池化，将特征压缩到 [Batch, Channels, 1]
         self.avg_pool = nn.AdaptiveAvgPool1d(1)
-        # 3. 1D卷积，用于跨通道信息交互。注意这里 in_channels=1, out_channels=1
-        # 这里的 padding 保证了卷积前后通道数不变
         self.conv = nn.Conv1d(1, 1, kernel_size=k, padding=(k - 1) // 2, bias=False)
-        # 4. Sigmoid 激活函数，生成权重
         self.sigmoid = nn.Sigmoid()
     def forward(self, x):
-        # x 的输入形状应为: [Batch, Channels, Length]
-        # 特征压缩 -> [Batch, Channels, 1]
         y = self.avg_pool(x)
-        # 为了让 1D 卷积在通道维度上滑动，需要转置
-        # 转置后形状 -> [Batch, 1, Channels]
         y = y.transpose(-1, -2)
-        # 经过 1D 卷积交互通道信息
         y = self.conv(y)
-        # 转置回原来的形状 -> [Batch, Channels, 1]
         y = y.transpose(-1, -2)
-        # 生成通道注意力权重
         y = self.sigmoid(y)
-        # 将权重与原特征相乘
-        # expand_as 确保了形状匹配，即使 length 维度不为 1 也能正确广播
         return x * y.expand_as(x)
 
 class DualBranchCNN(nn.Module):
-# ==========================================
-# 双分支 CNN 架构
-# ==========================================
     def __init__(self, output_dim, input_channels=1):
         super().__init__()
         
@@ -206,8 +178,21 @@ class DualBranchCNN(nn.Module):
         )
         
         # 3. 融合模块：两个分支 (128+128=256) 拼接后经过 CBAM
-        self.cbam = CBAM1D(in_planes=256)
-        # self.eca = ECA1D(channels=256)
+        # self.cbam = CBAM1D(in_planes=256)
+        self.eca = ECA1D(channels=256)
+        self.pool = nn.AdaptiveAvgPool1d(1)
+
+        # 分类头
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, output_dim)
+        )
+            # 3. 融合模块：两个分支 (128+128=256) 拼接后经过 CBAM
+        # self.cbam = CBAM1D(in_planes=256)
+        self.eca = ECA1D(channels=256)
         self.pool = nn.AdaptiveAvgPool1d(1)
 
         # 分类头
@@ -227,9 +212,9 @@ class DualBranchCNN(nn.Module):
         # 特征拼接 (Batch, Channels, Length) -> 维度变为 256
         feat_concat = torch.cat([feat_static, feat_dynamic], dim=1)
         
-        # 经过 CBAM 注意力加权
-        feat_attended = self.cbam(feat_concat)
-        # feat_attended = self.eca(feat_concat)
+        # 经过 CBAM、ECA 注意力加权
+        # feat_attended = self.cbam(feat_concat)
+        feat_attended = self.eca(feat_concat)
         
         # 全局池化与分类
         out = self.pool(feat_attended)
@@ -242,24 +227,131 @@ class DualBranchCNN(nn.Module):
             param.requires_grad = False
         print("Static branch is now frozen.")
 
+class ECA2D(nn.Module):
+# ==========================================
+# 2D-ECA 注意力机制
+# ==========================================
+    def __init__(self, channels, gamma=2, b=1):
+        super(ECA2D, self).__init__()
+        t = int(abs((math.log(channels, 2) + b) / gamma))
+        k = t if t % 2 else t + 1
+        
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k, padding=(k - 1) // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # x: [Batch, Channels, Height, Width]
+        b, c, h, w = x.size()
+        y = self.avg_pool(x).view(b, c) # [Batch, Channels]
+        y = y.unsqueeze(1) # [Batch, 1, Channels]
+        y = self.conv(y)   # [Batch, 1, Channels]
+        y = self.sigmoid(y).view(b, c, 1, 1) # [Batch, Channels, 1, 1]
+        return x * y.expand_as(x)   
+
+class DepthwiseSeparableConv2d(nn.Module):
+
+# ==========================================
+# 深度可分离卷积块 (体现边缘计算轻量化核心)
+# ==========================================
+    def __init__(self, in_channels, out_channels, kernel_size=3, padding=1):
+        super().__init__()
+        # 深度卷积 (groups=in_channels)
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, 
+                                   padding=padding, groups=in_channels, bias=False)
+        self.bn1 = nn.BatchNorm2d(in_channels)
+        # 逐点卷积 (1x1)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        x = self.relu(self.bn1(self.depthwise(x)))
+        x = self.relu(self.bn2(self.pointwise(x)))
+        return x
+
+class LightweightGAFCNN(nn.Module):
+# ==========================================
+# 结合 GAF 的轻量级 2D-CNN
+# ==========================================
+    def __init__(self, output_dim, input_channels=1):
+        super().__init__()
+        
+        # 初始特征提取 (保留你的静态分支概念，但转为2D)
+        self.static_branch = nn.Sequential(
+            nn.Conv2d(input_channels, 16, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 使用深度可分离卷积极大降低参数量
+            DepthwiseSeparableConv2d(16, 32),
+            nn.MaxPool2d(2)
+        )
+        
+        self.dynamic_branch = nn.Sequential(
+            nn.Conv2d(input_channels, 16, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            DepthwiseSeparableConv2d(16, 32),
+            nn.MaxPool2d(2)
+        )
+        
+        # 融合与注意力 (32 + 32 = 64 通道)
+        self.eca = ECA2D(channels=64)
+        self.pool = nn.AdaptiveAvgPool2d(1)
+
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64, 32),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(32, output_dim)
+        )
+
+    def forward(self, x):
+        # x 形状: (Batch, 1, H, W)
+        feat_static = self.static_branch(x)
+        feat_dynamic = self.dynamic_branch(x)
+        
+        feat_concat = torch.cat([feat_static, feat_dynamic], dim=1)
+        feat_attended = self.eca(feat_concat)
+        
+        out = self.pool(feat_attended)
+        out = self.fc(out)
+        return out
+
+    def freeze_static(self):
+        for param in self.static_branch.parameters():
+            param.requires_grad = False
+        print("Static branch is now frozen.")
+
 def train_cnn(X_train, X_test, y_train, y_test, task, 
               is_incremental=False, old_model=None, ewc_instance=None):
 # ==========================================
-# 更新后的训练逻辑 (支持双约束)
+# 新增：格拉姆角场 (GAF) 1D -> 2D 转换
 # ==========================================
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Converting 1D tabular data to 2D GAF images...")
+    # method='summation' 是一种标准的计算方式，将保持特征矩阵大小为 N x N
+    gaf = GramianAngularField(method='summation')
+    
+    # 转换训练集和测试集
+    # 输入的 X_train 必须是 2D numpy array: (n_samples, n_features) [cite: 39]
+    X_train_img = gaf.fit_transform(X_train) 
+    X_test_img = gaf.transform(X_test)
+    
+    # 为 PyTorch 增加 Channel 维度 -> (Batch, 1, Height, Width)
+    X_train_img = np.expand_dims(X_train_img, axis=1)
+    X_test_img = np.expand_dims(X_test_img, axis=1)
 
-    # reshape for CNN (1D)
-    X_train = np.expand_dims(X_train, axis=1)
-    X_test = np.expand_dims(X_test, axis=1)
+    X_train_tensor = torch.tensor(X_train_img, dtype=torch.float32)
+    X_test_tensor = torch.tensor(X_test_img, dtype=torch.float32)
+    y_train_tensor = torch.tensor(y_train, dtype=torch.long)
+    y_test_tensor = torch.tensor(y_test, dtype=torch.long)
 
-    X_train = torch.tensor(X_train, dtype=torch.float32)
-    X_test = torch.tensor(X_test, dtype=torch.float32)
-    y_train = torch.tensor(y_train, dtype=torch.long)
-    y_test = torch.tensor(y_test, dtype=torch.long)
-
-    train_dataset = TensorDataset(X_train, y_train)
-    test_dataset = TensorDataset(X_test, y_test)
+    train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
     train_loader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=config.BATCH_SIZE)
@@ -267,12 +359,12 @@ def train_cnn(X_train, X_test, y_train, y_test, task,
     if task == "binary":
         output_dim = 2
     elif task == "multi":
-        output_dim = len(torch.unique(y_train))
+        output_dim = len(torch.unique(y_train_tensor)) # 注意这里用了 y_train_tensor
     else: 
         raise ValueError("mode must be 'binary' or 'multi'")
 
     # 初始化新模型
-    model = DualBranchCNN(output_dim=output_dim).to(device)
+    model = LightweightGAFCNN(output_dim=output_dim).to(device)
 
     # 如果是增量学习阶段
     if is_incremental:
@@ -289,7 +381,7 @@ def train_cnn(X_train, X_test, y_train, y_test, task,
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.LEARNING_RATE)
     
     epochs = config.CNN_EPOCHS if hasattr(config, "CNN_EPOCHS") else 20
-    print(f"\nTraining DualBranch CNN (Incremental Mode: {is_incremental})...")
+    print(f"Training LightweightGAFCNN CNN (Incremental Mode: {is_incremental})...")
 
     buffer = BalancedReplayBuffer(num_classes=output_dim, samples_per_class=200)
 
@@ -317,12 +409,13 @@ def train_cnn(X_train, X_test, y_train, y_test, task,
                 # 约束 1: EWC (限制参数空间)
                 if ewc_instance is not None:
                     loss += 0.05 * ewc_instance.penalty(model)
+                
                 # 约束 2: LwF (限制输出空间)
                 if old_model is not None:
                     with torch.no_grad():
                         old_outputs = old_model(X_batch)
                     loss += 0.1 * lwf_distillation_loss(outputs, old_outputs, T=2.0)
-            # ！！！需要更改 EWC 和 LwF 的参数
+            # 降低損失權重： 將 EWC 權重從 0.4 降到 0.05，LwF 權重從 0.5 降到 0.1
 
             loss.backward()
             optimizer.step()
@@ -339,8 +432,8 @@ def train_cnn(X_train, X_test, y_train, y_test, task,
     print("\nEvaluating on test set...")
     evaluate_model(
         model,
-        X_test.cpu().numpy(),
-        y_test.cpu().numpy(),
+        X_test_img,
+        y_test, # 直接传 Tensor，避免反复转换
         batch_size=64,
         device=device,
         task_name=task,
@@ -360,69 +453,3 @@ def train_cnn(X_train, X_test, y_train, y_test, task,
     
     return model, new_ewc
 
-def train_dual(X_train, X_test, y_train, y_test, task, ):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    X_train = np.expand_dims(X_train, axis=1)
-    X_test = np.expand_dims(X_test, axis=1)
-
-    X_train = torch.tensor(X_train, dtype=torch.float32)
-    X_test = torch.tensor(X_test, dtype=torch.float32)
-    y_train = torch.tensor(y_train, dtype=torch.long)
-    y_test = torch.tensor(y_test, dtype=torch.long)
-
-    train_dataset = TensorDataset(X_train, y_train)
-    test_dataset = TensorDataset(X_test, y_test)
-
-    train_loader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
-
-    if task == "binary":
-        output_dim = 2
-    elif task == "multi":
-        output_dim = len(torch.unique(y_train))
-    else: 
-        raise ValueError("mode must be 'binary' or 'multi'")
-
-    model = DualBranchCNN(output_dim=output_dim).to(device)
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
-    epochs = config.CNN_EPOCHS if hasattr(config, "CNN_EPOCHS") else 20
-    print("\nTraining CNN...")
-
-    # 1. 检查标签分布
-    print("y_train unique:", torch.unique(y_train))
-    print("y_train counts:", torch.bincount(y_train))
-    # 2. 检查输入数据统计
-    print("X_train mean:", X_train.mean().item(), "std:", X_train.std().item())
-
-    for epoch in range(epochs):
-        model.train()
-        total_loss = 0
-        for X_batch, y_batch in train_loader:
-
-            X_batch = X_batch.to(device)
-            y_batch = y_batch.to(device)
-            
-            optimizer.zero_grad()
-            outputs = model(X_batch)
-            loss = criterion(outputs, y_batch)
-            
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        avg_loss = total_loss / len(train_loader)
-        print(f"Epoch {epoch+1}/{epochs}, Average Loss: {avg_loss:.4f}")
-
-    print("\nEvaluating on test set...")
-    evaluate_model(
-        model,
-        X_test.cpu().numpy(),   # 传入 NumPy 数组
-        y_test.cpu().numpy(),
-        batch_size=64,
-        device=device,
-        task_name=task,
-        print_report=True,
-        return_results=False    # 只需打印，不返回结果
-    )

@@ -256,4 +256,69 @@ def train_cnn(X_train, X_test, y_train, y_test, task):
     print("Computing Fisher Information for EWC...")
     ewc = EWC(model, train_loader, device)
     
+def train_c(X_train, X_test, y_train, y_test, task):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    X_train = np.expand_dims(X_train, axis=1)
+    X_test = np.expand_dims(X_test, axis=1)
+
+    X_train = torch.tensor(X_train, dtype=torch.float32)
+    X_test = torch.tensor(X_test, dtype=torch.float32)
+    y_train = torch.tensor(y_train, dtype=torch.long)
+    y_test = torch.tensor(y_test, dtype=torch.long)
+
+    train_dataset = TensorDataset(X_train, y_train)
+
+    train_loader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
+
+    if task == "binary":
+        output_dim = 2
+    elif task == "multi":
+        output_dim = len(torch.unique(y_train))
+    else: 
+        raise ValueError("mode must be 'binary' or 'multi'")
+
+    model = CNNModel(output_dim=output_dim).to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
+    epochs = config.CNN_EPOCHS if hasattr(config, "CNN_EPOCHS") else 20
+    print("\nTraining CNN...")
+
+    # 1. 检查标签分布
+    print("y_train unique:", torch.unique(y_train))
+    print("y_train counts:", torch.bincount(y_train))
+    # 2. 检查输入数据统计
+    print("X_train mean:", X_train.mean().item(), "std:", X_train.std().item())
+
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0
+        for X_batch, y_batch in train_loader:
+
+            X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(X_batch)
+            loss = criterion(outputs, y_batch)
+            
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        avg_loss = total_loss / len(train_loader)
+        print(f"Epoch {epoch+1}/{epochs}, Average Loss: {avg_loss:.4f}")
+ 
+    print("\nEvaluating on test set...")
+    evaluate_model(
+        model,
+        X_test.cpu().numpy(),   # 传入 NumPy 数组
+        y_test.cpu().numpy(),
+        batch_size=64,
+        device=device,
+        task_name=task,
+        print_report=True,
+        return_results=False    # 只需打印，不返回结果
+    )
 
