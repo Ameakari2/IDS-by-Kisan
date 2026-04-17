@@ -1,0 +1,59 @@
+【prompt】
+现在两个数据集UNSW_NB15_training和UNSW_NB15_testing。现在我想：
+1.手动处理数据，将数据保存在两个新的csv文件里
+2.对service列中的"-"换为"unknown"
+3.删除id等无关的列，以及公认贡献不高的列
+4.目前normal的label为0，其余9种攻击的label为1，去掉现在的label，按训练集中各种类流量数据的数量，从多到少排序0-9
+5.每种攻击或正常流量数据上限为15000条
+6.删除含空格的行
+7.并针对srcip 、 dstip、is_ftp_login、ct_ftp_cmd添加一段检查“是否存在，若存在则删除”的代码
+8.删除数据集自身重复的数据
+9.完成以上所有操作后，对比现在两个数据集，若存在相同的数据，则在测试集中删除它
+
+
+这是我目前的部分代码，你需要完成完成：
+1、编写dataset_loader.py代码，完成数据加载
+2、根据此前的对话，修改与完善train.py的内容
+
+数据集已完成预处理：删除重复数据、含空格的数据，以及删除部分用处不大的列。
+当前所有列名:
+['dur', 'proto', 'service', 'state', 'spkts', 'dpkts', 'sbytes', 'dbytes', 'rate', 'sttl', 'dttl', 'sload', 'dload', 'sloss', 'dloss', 'sinpkt', 'dinpkt', 'sjit', 'djit', 'swin', 'stcpb', 'dtcpb', 'dwin', 'tcprtt', 'synack', 'ackdat', 'smean', 'dmean', 'trans_depth', 'response_body_len', 'ct_srv_src', 'ct_state_ttl', 'ct_dst_ltm', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'ct_flw_http_mthd', 'ct_src_ltm', 'ct_srv_dst', 'is_sm_ips_ports', 'new_label']
+已删去的列名：
+['id', 'label', 'stime', 'ltime', 'srcip', 'dstip', 'is_ftp_login', 'ct_ftp_cmd']
+
+
+
+
+
+【data】
+数据总行数: 64856
+数据总列数: 41
+攻击类型  样本数量  占比 (%)
+Normal 15000   23.13
+Generic  4181    6.45
+Exploits 15000   23.13
+Fuzzers 15000   23.13
+DoS  3806    5.87
+Reconnaissance  7522   11.60
+Analysis  1594    2.46
+Backdoor  1535    2.37
+Shellcode  1091    1.68
+Worms   127    0.20
+
+攻击类型  样本数量  占比 (%)
+Normal 15000   41.47
+Generic  3418    9.45
+Exploits  7590   20.98
+Fuzzers  4810   13.30
+DoS  1694    4.68
+Reconnaissance  2469    6.83
+Analysis   438    1.21
+Backdoor   345    0.95
+Shellcode   365    1.01
+Worms    44    0.12
+
+当前所有列名:
+['dur', 'proto', 'service', 'state', 'spkts', 'dpkts', 'sbytes', 'dbytes', 'rate', 'sttl', 'dttl', 'sload', 'dload', 'sloss', 'dloss', 'sinpkt', 'dinpkt', 'sjit', 'djit', 'swin', 'stcpb', 'dtcpb', 'dwin', 'tcprtt', 'synack', 'ackdat', 'smean', 'dmean', 'trans_depth', 'response_body_len', 'ct_srv_src', 'ct_state_ttl', 'ct_dst_ltm', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'ct_flw_http_mthd', 'ct_src_ltm', 'ct_srv_dst', 'is_sm_ips_ports', 'new_label']
+删去的列名：
+['id', 'label', 'stime', 'ltime', 'srcip', 'dstip', 'is_ftp_login', 'ct_ftp_cmd']
+
