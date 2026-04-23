@@ -52,6 +52,6 @@ def review_dataset(file_path, name="数据集"):
 
 if __name__ == "__main__":
     # 检查你生成的两个新文件
-    review_dataset('train_processed.csv', name="训练集")
-    review_dataset('test_processed.csv', name="测试集")
+    review_dataset('train_refined.csv', name="训练集")
+    review_dataset('test_refined.csv', name="测试集")
 

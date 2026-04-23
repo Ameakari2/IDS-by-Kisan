@@ -1,5 +1,4 @@
 # --- Path Settings ---
-MODEL_SAVE_PATH = "D:/ProgramTest/SystemMaster/NewGen3"
 
 TRAIN_DATA = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_training-set.csv"
 TEST_DATA = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_testing-set.csv"
@@ -7,21 +6,21 @@ TEST_DATA = "D:/ProgramTest/SystemMaster/datasets/UNSW_NB15_testing-set.csv"
 TRAIN_PATH = "train_processed.csv"
 TEST_PATH = "test_processed.csv"
 
+TRAIN_BINARY = "train_binary.csv"
+TEST_BINARY = "test_binary.csv"
+"""
+TRAIN_BINARY = "train_refined.csv"
+TEST_BINARY = "test_refined.csv"
+"""
 # --- Mode Setting ---
-MODE = "multi" # binary 和 multi 两种模式（小写）
+MODE = "binary" # binary 和 multi 两种模式（小写）
 
 # --- CNN Settings ---
 LEARNING_RATE=0.001 # 合适的学习率
 CNN_EPOCHS = 20
 BATCH_SIZE = 64
 
-# --- Feature Selection ---
-CORRELATION_THRESHOLD = 0.1 # 从0.3改为0.1
-
-# --- Original Training Files ---
-TEST_SIZE_BINARY = 0.2
-TEST_SIZE_MULTI = 0.3
-RANDOM_STATE = 42
+# optimizer % scheduler 学习率调度器？
 
 # --- FL Settings ---
 USE_FEDERATED = False    # 是否启用联邦学习

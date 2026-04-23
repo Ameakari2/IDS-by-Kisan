@@ -69,10 +69,18 @@ def sample_limit(df):
         lambda x: x.sample(n=min(len(x), 15000), random_state=42)
     ).reset_index(drop=True)
 
-final_train = sample_limit(train_processed)
-final_test = sample_limit(test_processed)
+def sample_limit2(df):
+    return df.groupby('new_label', group_keys=False).apply(
+        lambda x: x.sample(
+            n=min(len(x), 20000 if x.name == 0 else 5000),
+            random_state=42)
+    ).reset_index(drop=True)
+
+final_train = sample_limit2(train_processed)
+final_test = sample_limit2(test_processed)
 
 # 最终导出
-final_train.to_csv('train_processed.csv', index=False)
-final_test.to_csv('test_processed.csv', index=False)
+final_train.to_csv('train_binary.csv', index=False)
+final_test.to_csv('test_binary.csv', index=False)
 print("\n所有预处理操作已完成，文件已保存。")
+
