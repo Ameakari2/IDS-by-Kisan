@@ -1,6 +1,7 @@
 import config
 import dataset_loader
 import train, train3
+import baseline
 
 def run():
     Xs_train, Xd_train, Xs_test, Xd_test, y_train, y_test = dataset_loader.load_dataset()
@@ -12,7 +13,7 @@ def run():
 def run_baseline():
     # Xs_train, Xd_train, Xs_test, Xd_test, y_train, y_test = dataset_loader.load_dataset()
     X_train, X_test, y_train, y_test = dataset_loader.load_dataset_baseline()
-    train.train_baseline(X_train, X_test, y_train, y_test)
+    baseline.train_cnn(X_train, X_test, y_train, y_test)
 
 def run3():
     X_train, X_test, y_train, y_test = dataset_loader.load_dataset_multiscale()
@@ -30,3 +31,4 @@ if __name__ == "__main__":
         raise ValueError("mode must be 'binary' or 'multi'")
     # run3()
     run_baseline()
+

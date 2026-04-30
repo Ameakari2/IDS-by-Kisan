@@ -80,9 +80,9 @@ def evaluate_baseline(model, X, y, device):
             x = x.to(device)
 
             outputs = model(x)
-            _, preds = torch.max(outputs, 1)
-            # probs = torch.softmax(outputs, dim=1)[:, 1]
-            # preds = (probs > 0.5).long() # 阈值
+            # _, preds = torch.max(outputs, 1)
+            probs = torch.softmax(outputs, dim=1)[:, 1]
+            preds = (probs > 0.6).long() # 阈值
 
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.numpy())
@@ -90,7 +90,7 @@ def evaluate_baseline(model, X, y, device):
     print("\n=== Baseline Evaluation ===")
     print("Accuracy:", accuracy_score(all_labels, all_preds))
     print("Precision:", precision_score(all_labels, all_preds, average='weighted', zero_division=0))
-    print("Recall:", recall_score(all_labels, all_preds, average='weighted', zero_division=0))
+    print("Recall:", recall_score(all_labels, all_preds, average='macro', zero_division=0))
     print("F1:", f1_score(all_labels, all_preds, average='weighted', zero_division=0))
     
     print("\nClassification Report:")
@@ -261,8 +261,10 @@ class MultiScaleBranch(nn.Module):
     def forward(self, x):
         f1 = self.branch_k3(x)
         f2 = self.branch_k5(x)
-        # concat
-        return torch.cat([f1, f2], dim=1)  # (B,128,L)
+        # return torch.cat([f1, f2], dim=1)  # (B,128,L)
+
+        concat = torch.cat([f1, f2], dim=1)
+        return self.fuse(concat)
     
 class SharedStem(nn.Module):
     def __init__(self):

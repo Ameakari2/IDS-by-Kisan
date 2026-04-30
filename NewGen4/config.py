@@ -15,9 +15,11 @@ TEST_BINARY = "test_refined.csv"
 # --- Mode Setting ---
 MODE = "binary" # binary 和 multi 两种模式（小写）
 
+MODEL_TYPE = "LSTM" # LSTM or RNN
+
 # --- CNN Settings ---
 LEARNING_RATE=0.001 # 合适的学习率
-CNN_EPOCHS = 20
+CNN_EPOCHS = 10
 BATCH_SIZE = 64
 
 # optimizer % scheduler 学习率调度器？

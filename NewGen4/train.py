@@ -236,38 +236,6 @@ class DualBranchCNN(nn.Module):
         """
         return out, f_s, f_d
 
-class SimpleCNN(nn.Module):
-    def __init__(self, input_dim, output_dim):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv1d(1, 32, kernel_size=3, padding=1),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
-            nn.MaxPool1d(2),
-
-            nn.Conv1d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.MaxPool1d(2),
-
-            nn.Conv1d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-        self.pool = nn.AdaptiveAvgPool1d(1)
-
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(64, output_dim)
-        )
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.pool(x)
-        x = self.fc(x)
-        return x
-
 def train_dual(Xs_train, Xd_train, Xs_test, Xd_test, y_train, y_test):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -349,59 +317,6 @@ def train_dual(Xs_train, Xd_train, Xs_test, Xd_test, y_train, y_test):
 
     print("\nEvaluating...")
     evaluate_model(model, Xs_test, Xd_test, y_test, device)
-
-def train_baseline(X_train, X_test, y_train, y_test):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    """
-    # ✅ 拼接特征（关键区别）
-    X_train = np.concatenate([Xs_train, Xd_train], axis=1)
-    X_test = np.concatenate([Xs_test, Xd_test], axis=1)
-    """
-    # reshape
-    X_train = np.expand_dims(X_train, axis=1)
-    X_test = np.expand_dims(X_test, axis=1)
-
-    # tensor
-    X_train = torch.tensor(X_train, dtype=torch.float32)
-    y_train = torch.tensor(y_train, dtype=torch.long)
-
-    dataset = TensorDataset(X_train, y_train)
-    loader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True)
-
-    output_dim = len(np.unique(y_train.numpy()))
-    input_dim = X_train.shape[-1]
-
-    model = SimpleCNN(input_dim, output_dim).to(device)
-
-    # 👉 baseline建议：先不用加权
-    criterion = nn.CrossEntropyLoss()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
-
-    print("\nTraining Baseline CNN...")
-
-    for epoch in range(config.CNN_EPOCHS):
-        model.train()
-        total_loss = 0
-
-        for x, labels in loader:
-            x = x.to(device)
-            labels = labels.to(device)
-
-            optimizer.zero_grad()
-            outputs = model(x)
-
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()
-
-        print(f"[Baseline] Epoch {epoch+1}, Loss: {total_loss/len(loader):.4f}")
-
-    # ===== 测试 =====
-    print("\nEvaluating Baseline...")
-    evaluate_baseline(model, X_test, y_test, device)
 
 def train_binary(Xs_train, Xd_train, Xs_test, Xd_test, y_train, y_test):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
